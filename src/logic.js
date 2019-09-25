@@ -71,12 +71,15 @@ function summ(aa) {
         let ef = [];
         a.split('').forEach(b => {
             let cl = Number(b);
-            if (!isNaN(cl)) {
+            if (!isNaN(cl) || b === '.') {
                 ef.push(b);
             }
         });
         if (ef.length > 0) {
-            sum += Number(ef.join(''));
+            let fe = Number(ef.join(''));
+            if (!isNaN(fe)) {
+                sum += fe;
+            }
         }
     });
     return sum;
