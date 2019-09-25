@@ -16,7 +16,7 @@ $(document).ready(function () {
     //--
     let text = $('<textarea>');
     text.css({
-        color: 'black',
+        color: 'yellow',
         outline: 'none',
         position: 'absolute',
         top: 0,
@@ -29,16 +29,25 @@ $(document).ready(function () {
     text.on('keyup', function () {
         localStorage.setItem('item', $(text).val());
         let sum = summ($(text).val());
-        div.text(sum);
+        div.text(addComma(sum));
         let font_size = 1;
         let back = 0;
         div.css({ 'font-size': font_size });
-        while (text.outerWidth() > div.outerWidth()) {
+        div.css({
+            'display': 'inline',
+            position: 'absolute',
+        });
+        while (text.outerWidth() / 2 > div.outerWidth()) {
             back = font_size;
             font_size += 10;
             div.css({ 'font-size': font_size });
         }
         div.css({ 'font-size': back });
+        div.css({
+            'text-align': 'right',
+            'display': 'block',
+            position: '',
+        });
     });
     body.append(text);
 
@@ -71,4 +80,8 @@ function summ(aa) {
         }
     });
     return sum;
+}
+function addComma(num) {
+    var regexp = /\B(?=(\d{3})+(?!\d))/g;
+    return num.toString().replace(regexp, ',');
 }
