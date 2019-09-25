@@ -39,8 +39,6 @@ $(document).ready(function () {
             div.css({ 'font-size': font_size });
         }
         div.css({ 'font-size': back });
-        console.log(font_size);
-
     });
     body.append(text);
 
