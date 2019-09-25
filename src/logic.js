@@ -42,6 +42,7 @@ $(document).ready(function () {
     });
     body.append(text);
 
+    console.log(localStorage.getItem('item'));
     if (!localStorage.getItem('item')) {
         let list = [];
         list.push('라면4200')
