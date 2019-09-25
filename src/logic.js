@@ -27,6 +27,7 @@ $(document).ready(function () {
         height: '100%',
     });
     text.on('keyup', function () {
+        localStorage.setItem('item', $(text).val());
         let sum = summ($(text).val());
         div.text(sum);
         let font_size = 1;
@@ -43,12 +44,16 @@ $(document).ready(function () {
     });
     body.append(text);
 
-    let list = [];
-    list.push('라면4200')
-    list.push('비누 2000');
-    list.push('500');
-    list.push('땅콩1000');
-    text.text(list.join('\n'));
+    if (!localStorage.getItem('item')) {
+        let list = [];
+        list.push('라면4200')
+        list.push('비누 2000');
+        list.push('500');
+        list.push('땅콩1000');
+        text.text(list.join('\n'));
+    } else {
+        text.text(localStorage.getItem('item'));
+    }
     text.focus();
     text.trigger('keyup');
 });
