@@ -1,0 +1,5 @@
+[
+    "^/ws/node_modules/.*",
+    "^/ws/package-lock\\.json$",
+    "^.*/\\.DS_Store$"
+]
