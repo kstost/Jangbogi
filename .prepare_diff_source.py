@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 import os, sys, hashlib, re, json, dateutil.parser, pytz
+# sudo pip3 install python-dateutil
+# sudo pip3 install pytz
 local_timezone = pytz.timezone('Asia/Seoul')
 
 def is_safe_name(fn): #qq
 	ddfe = fn.find('"') == -1 and fn.find("'") == -1 and fn.find("`") == -1
 	if not ddfe:
-		print "WRONG NAME: "+fn
+		print("WRONG NAME: "+fn)
 	return ddfe
 
 def copy_itm(pl1, dff, rrr=False): #qq
@@ -110,7 +112,7 @@ def compare_two_sources(compare_dir, nMode=False):
 		fde = list_files(compare_dir)
 		if False:
 			for nm in fde:
-				print nm
+				print(nm)
 		if len(fde) == 2:
 			cnt = 0
 			tail = '_'
@@ -151,7 +153,7 @@ def getGithubCredential():
 	else:
 		return ''
 def getExclude():
-	path = './exclude.json'
+	path = './.exclude.json'
 	if is_file(path):
 		return json.loads(shell_exec('cat "'+path+'"').strip())
 	else:
@@ -174,6 +176,60 @@ def get_commits_list(owner, repo):
 				'sha' : ii['sha']
 			})
 	return rte
+
+##==============
+
+def get_project_id(): #OKK
+	project_id = shell_exec('pwd').strip().split('/')
+	project_id = project_id[-1]
+	return project_id
+
+def get_garc_path(): #OKK
+	ppp = (shell_exec('cd ..; pwd').strip()) + '/.git_archives'
+	genPath(ppp)
+	return ppp
+
+def save_archive(sourcepath, mKey): #OKK
+	project_id = get_project_id()
+	if len(mKey) >= 7 and is_dir(sourcepath) and is_dir(sourcepath+'/'+project_id) and len(project_id) > 0:
+		mKey = mKey[:7]
+		ggp = get_garc_path()
+		cfilename = ggp+'/'+project_id+'.'+mKey+'.tgz'
+		shell_exec("cd "+sourcepath+"; tar cfpz "+cfilename+" "+project_id)
+		if is_file(cfilename):
+			hash_ = md5file(cfilename)
+			nfilename = ggp+'/'+project_id+'.'+mKey+'.'+hash_+'.tgz'
+			shell_exec('mv '+cfilename+' '+nfilename)
+
+def get_arc_filename(kks): #OKK
+	project_id = get_project_id()
+	if not len(kks) >= 7:
+		return ''
+	for vsf in list_files(get_garc_path()):
+		if vsf.find(project_id+'.'+(kks[:7])+'.') == 0:
+			return vsf
+	return ''
+
+def get_arcfile_with_hash(github_id, project_id, kks): #OKK
+	arc = get_arc_filename(kks)
+	if len(arc) > 0:
+		return arc
+	else:
+		path_ = getHomePath()+'/.'+genRandom()+'/'
+		genPath(path_)
+		pull_and_get_commithashes(path_, github_id, project_id)
+		git_checkout(path_+'/'+project_id, kks)
+		rmItem(path_+'/'+project_id+"/.git") ## PHYSic
+		save_archive(path_, kks)
+		return get_arc_filename(kks)
+
+def get_coms(github_id, project_id): #OKK
+	newlist = []
+	for ivj in get_commits_list(github_id, project_id):
+		newlist.append(str('commit '+ivj['sha']))
+	return newlist
+
+##========================
 
 # -------------------------------------
 # $ git credential-osxkeychain erase
@@ -199,24 +255,88 @@ def remove_exclude_items():
 	while len(list_empty_dir('.')) > 0:
 		shell_exec("find . -type d -empty -exec rm -rf '{}' \; 2>/dev/null")
 
+if len(sys.argv) == 3:
+	if sys.argv[1] == 'find':
+		keyword = sys.argv[2]
+		if is_safe_name(keyword):
+			result = shell_exec("grep -rn './' -e \""+keyword+"\"").strip().split('\n')
+			ffe = {}
+			for line in result:
+				if line.find(':') > -1:
+					fnma = os.path.abspath(line.split(':')[0])
+					ffe[fnma] = fnma
+			print('\n'*100)
+			print('-'*80)
+			print('\n'*2)
+
+			linemax = 0
+			lenlen = 0
+			for line in ffe:
+				lenlen = len(line)
+				if linemax < lenlen:
+					linemax = lenlen
+
+			addstr = (' '*(lenlen * 2))
+
+			for line in ffe:
+				print((line+addstr)[0:linemax] + (' '*3) + (line.split('/')[-1]))
+				# print ''
+			print('\n'*2)
+		else:
+			print('Your request is refused for the keyword includes some special characters')
+		sys.exit()
 if len(sys.argv) == 2:
+	if sys.argv[1] == 'mooo':
+		hp = getHomePath()
+		ddf = shell_exec('ls -a1 '+hp).split('\n')
+		ddf.sort()
+		for ll in ddf:
+			if len(ll) == 33 and ll[0] == '.':
+				print(hp+'/'+ll)
+				rmItem(hp+'/'+ll)
+
+	if sys.argv[1] == 'commiting':
+		rest = shell_exec('git add .; git commit -m "fixed"; git push -u origin master;')
+		mKey = ''
+		rest = rest.strip().split('\n')
+		if len(rest) > 0:
+			masterkey = rest[0]
+			masterkey = masterkey.replace('[', ' ')
+			masterkey = masterkey.replace(']', ' ')
+			masterkey = masterkey.strip().split(' ')
+			if len(masterkey) == 4:
+				mKey = masterkey[1].strip()
+		if len(mKey) == 7:
+			#OKK
+			project_id = get_project_id()
+			path_ = getHomePath()+'/.'+genRandom()+'/'
+			genPath(path_)
+			code_ = shell_exec('cd ..; pwd').strip()+'/'+project_id
+			if is_dir(path_) and is_dir(code_):
+				copy_itm(code_, path_, True)
+			if is_dir(path_+project_id):
+				shell_exec('rm -rf '+path_+project_id+'/.git')
+				save_archive(path_, mKey)
+			rmItem(path_)
+		sys.exit()
+
 	if sys.argv[1] == 'remove_exclude':
-		# python prepare_diff_source.py remove_exclude
+		# python3 .prepare_diff_source.py remove_exclude
 		remove_exclude_items()
 		sys.exit()
 
 if len(sys.argv) == 4:
 	if sys.argv[1] == 'list':
-		print '-' * 80
+		print('-' * 80)
 		if getGithubCredential() == '':
-			print 'You should place .github_api.token to ~/ and put your github api token string into this file'
+			print('You should place .github_api.token to ~/ and put your github api token string into this file')
 		else:
 			dnt = get_commits_list(sys.argv[2], sys.argv[3])
 			cnt = 0
 			for dd in dnt:
-				print ((' '*10)+str(cnt))[-4:] + ' : ' + dd['time'] + ' ' + dd['sha']
+				print(((' '*10)+str(cnt))[-4:] + ' : ' + dd['time'] + ' ' + dd['sha'])
 				cnt+=1
-		print '-' * 80
+		print('-' * 80)
 	sys.exit()
 
 if len(sys.argv) == 2:
@@ -226,7 +346,6 @@ if len(sys.argv) == 2:
 	sys.exit()
 
 current_path = getHomePath()
-base_path = current_path+'/.tmp_work_for_git_'+genRandom()
 compare_dir = current_path+'/Downloads/GITHUB_PROJECT_COMPARE/'
 if len(sys.argv) >= 5:
 	github_id = sys.argv[1]
@@ -241,12 +360,9 @@ if len(sys.argv) >= 5:
 			compare_local = False
 
 	project_id = sys.argv[2]
-	random_str = genRandom()
-	path_ = base_path+"/"+random_str
-	rmItem(base_path)
-	genPath(path_)
 
-	list_ = pull_and_get_commithashes(path_, github_id, project_id)
+	list_ = get_coms(github_id, project_id)
+
 	rmItem(compare_dir)
 	genPath(compare_dir)
 	cnt = 0
@@ -255,16 +371,16 @@ if len(sys.argv) >= 5:
 		ffwe = [0, ffwe[1]]
 	for no in ffwe:
 		if len(list_) > no and list_[no].find(' ') > -1:
+			rmItem(get_garc_path()+'/'+project_id)
 			cnt += 1
 			kks = list_[no].split(' ')[1]
-			cl = str(cnt)
-			bpc = base_path+"/"+cl
-			cdc = compare_dir+"/"+cl
-			copy_itm(path_, bpc, True)
-			bpp = bpc+"/"+project_id
-			git_checkout(bpp, kks)
-			moveItm(bpp, cdc)
-			rmItem(cdc+"/.git")
+			afile = get_arcfile_with_hash(github_id, project_id, kks)
+			if len(afile) > 0:
+				checksum_name = project_id+'.'+(kks[:7])+'.'+md5file(get_garc_path()+'/'+afile)+'.tgz'
+				if checksum_name == afile:
+					shell_exec("cd "+get_garc_path()+"; tar xfpz "+afile)
+					moveItm(get_garc_path()+'/'+project_id, compare_dir+"/"+str(cnt))
+
 	cl = '1'
 	cdc = compare_dir+'/'+cl
 	if compare_local and is_dir(compare_local) and is_dir(cdc):
@@ -274,9 +390,9 @@ if len(sys.argv) >= 5:
 
 	if cnt < 2:
 		rmItem(compare_dir)
-		print '-'*80
-		print 'Index number of this project is out of range'
-		print '-'*80
+		print('-'*80)
+		print('Index number of this project is out of range')
+		print('-'*80)
 	else:
 		trm = 'trimmed_'
 		compare_two_sources(compare_dir, True)
@@ -291,34 +407,33 @@ if len(sys.argv) >= 5:
 				new_name = 'rawdata_'+no+'_'
 			if old_name and new_name:
 				moveItm(old_name, new_name, compare_dir)
-		print '-'*80
-		print 'Files are downloaded on '+compare_dir+'\n'
+		print('-'*80)
+		print('Files are downloaded on '+compare_dir+'\n')
 		diff_file_count = 0
 		for no in list_files(compare_dir):
 			drnn = compare_dir+no
-			print drnn
+			print(drnn)
 			if no.find(trm) > -1 and is_dir(drnn):
 				diff_file_count += len(list_files(drnn))
-		print '-'*80
+		print('-'*80)
 		if diff_file_count == 0:
-			print '\n'*100
-			print 'NOTHING DIFFERENT'
-			print '\n'*3
-	rmItem(base_path)
+			print('\n'*100)
+			print('NOTHING DIFFERENT')
+			print('\n'*3)
 else:
-	print '-'*80
-	print 'python '+get_script_name()+' github_account_id project_id commit_number commit_number'
-	print ''
-	print 'github_account_id: github account id'
-	print 'project_id: project name'
-	print 'commit_number: if you give 0 then it means the first one of all commits'
-	print 'commit_number: if you give 1 then it means the second one of all commits'
-	print ''
-	print '[Usage]'
-	print '1. place '+get_script_name()+' file on your pc'
-	print '2. turn on terminal app and type below'
-	print '   python '+get_script_name()+' kstost PrepareDiffSource 0 1'
-	print ''
-	print '[How to compare with local]'
-	print '   python '+get_script_name()+' kstost PrepareDiffSource /Users/kstost/Downloads/project 1'
-	print '-'*80
+	print('-'*80)
+	print('python3 '+get_script_name()+' github_account_id project_id commit_number commit_number')
+	print('')
+	print('github_account_id: github account id')
+	print('project_id: project name')
+	print('commit_number: if you give 0 then it means the first one of all commits')
+	print('commit_number: if you give 1 then it means the second one of all commits')
+	print('')
+	print('[Usage]')
+	print('1. place '+get_script_name()+' file on your pc')
+	print('2. turn on terminal app and type below')
+	print('   python3 '+get_script_name()+' kstost PrepareDiffSource 0 1')
+	print('')
+	print('[How to compare with local]')
+	print('   python3 '+get_script_name()+' kstost PrepareDiffSource /Users/kstost/Downloads/project 1')
+	print('-'*80)
